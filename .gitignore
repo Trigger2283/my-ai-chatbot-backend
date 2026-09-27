@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+# 给独立前端仓库准备的材料，不属于后端仓库。
+frontend-starter/
