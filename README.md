@@ -1,157 +1,228 @@
-﻿# AI 聊天后端（Flask + Render）
+﻿# After Hours — AI Bar & Kitchen Backend
 
-本项目接收前端消息，调用 OpenAI Responses API，再返回文字回答。前端使用独立 GitHub 仓库并部署到 GitHub Pages；后端使用本仓库并部署到 Render。
+After Hours is a conversational AI host for a fictional late-night bar and kitchen. It shares cocktail ideas, cooking techniques, food pairings, and casual conversation with a warm, lightly humorous personality.
 
-浏览器中的 GitHub Pages 前端 → Render 后端 `/api/chat` → OpenAI API → 后端返回 JSON → 前端显示回答。
+This repository contains the Flask backend. The English-language chat interface is maintained separately in the portfolio repository and hosted on GitHub Pages.
 
-代码尚未部署或真实调用 API。本机没有可用 Python 运行环境，尚未执行运行测试。
+## Live application
 
-## 1. 上传后端代码
+- **Chat:** https://trigger2283.github.io/chatbot/
+- **Backend:** https://my-ai-chatbot-backend-gevf.onrender.com
+- **Health check:** https://my-ai-chatbot-backend-gevf.onrender.com/health
+- **Frontend repository:** https://github.com/Trigger2283/Trigger2283.github.io
+- **Backend repository:** https://github.com/Trigger2283/my-ai-chatbot-backend
 
-按课程截图要求，新建 **Public（公开）** 仓库，例如 `my-ai-chatbot-backend`，与前端仓库分开。
+The chat requires an access password provided by the site owner. This password is separate from the OpenAI API key.
 
-在 GitHub 点 `Add file → Upload files`，将以下文件上传到仓库根目录：
-
-- `app.py`
-- `requirements.txt`
-- `.python-version`
-- `.gitignore`
-- `.env.example`（只有占位符）
-- `README.md`
-- `prompt_log.md`
-
-不要上传外层 `houduan` 文件夹。`frontend-starter` 是给另一个前端仓库准备的材料，不属于后端仓库，已加入 `.gitignore`。GitHub 网页手动上传不会按 `.gitignore` 自动筛选，请按清单选择文件。不要上传真实密钥、口令或 `.env` 文件。
-
-## 2. 部署 Render 后端
-
-登录 https://dashboard.render.com ，点 `New + → Web Service`，连接并选择后端仓库。
-
-| 设置 | 填写内容 |
-| --- | --- |
-| Name | `my-ai-chatbot-backend`，重名可改 |
-| Language / Runtime | `Python 3` |
-| Branch | `main`，以实际分支为准 |
-| Root Directory | 留空 |
-| Build Command | `pip install -r requirements.txt` |
-| Start Command | `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 90` |
-| Instance Type | 学习时可选 Free，以账户实际选项为准 |
-| Health Check Path | `/health` |
-
-在 Environment Variables 中添加以下配置，值两边不加引号：
-
-| 变量 | 用途 / 示例 |
-| --- | --- |
-| `OPENAI_API_KEY` | 从 https://platform.openai.com/api-keys 创建的真实密钥，只放后端 |
-| `OPENAI_MODEL` | `gpt-4.1-mini`，也是代码默认值 |
-| `CHAT_PASSWORD` | 自己设置的随机英文数字口令，建议至少 20 位 |
-| `FRONTEND_ORIGINS` | `https://你的GitHub用户名.github.io`，多个来源用英文逗号分隔 |
-
-若前端页面是 `https://alice.github.io/my-ai-chatbot-frontend/`，`FRONTEND_ORIGINS` 填 `https://alice.github.io`，**不含仓库路径**。自定义域名则填写对应来源（协议 + 域名 + 非默认端口）。
-
-检查价格和配置后点击 Deploy / Create Web Service。状态变成 Live 后，访问 `https://你的服务名.onrender.com/health`，应看到 `{"status":"ok"}`。根路径 `/` 显示服务信息，不再显示聊天页面。健康检查不会调用 OpenAI，也不表示密钥已验证。
-
-## 3. 独立前端
-
-已有前端仓库时，按下一节接口约定接入。没有前端时，可将本地 `frontend-starter` 目录中的文件上传到另一个仓库根目录，按其中 README 配置 GitHub Pages。前端 `config.js` 要填写真实 Render 后端网址。
-
-| 仓库 | 部署平台 | 内容 |
-| --- | --- | --- |
-| `my-ai-chatbot-backend` | Render Web Service | Python 后端、依赖、README、提示日志 |
-| `my-ai-chatbot-frontend` 或已有前端仓库 | GitHub Pages | HTML/CSS/JavaScript、公开的后端网址 |
-
-## 4. 接口及前后端通信
-
-### GET / 和 GET /health
-
-无需口令。`/` 返回服务信息；`/health` 返回 HTTP 200 和 `{"status":"ok"}`，用于浏览器直接访问或 Render 健康检查。聊天前端不必调用这两个接口。
-
-### POST /api/chat
-
-用户点击发送时，前端调用完整地址，例如 `https://你的服务名.onrender.com/api/chat`。
-
-请求头：
+## How it works
 
 ```text
-Content-Type: application/json
-X-Chat-Password: 用户在网页输入的访问口令
+GitHub Pages frontend
+    | POST /api/chat: messages + access password
+    v
+Flask backend on Render
+    | Server-side API key + role instructions + conversation
+    v
+OpenAI Responses API
+    | Generated text
+    v
+Backend JSON response -> frontend conversation view
 ```
 
-请求 JSON：
+The frontend sends a request when the visitor clicks Send or presses Enter. The backend validates the access password and message format, calls OpenAI, and returns the reply. The frontend displays the reply as plain text. While a request is pending, it disables the send controls; on failure, it shows an English message based on the HTTP status and preserves the visitor's input for retrying.
 
-```json
-{"messages":[{"role":"user","content":"你好"}]}
-```
+The frontend includes up to five recent complete exchanges, followed by the current message. It may include fewer exchanges to stay within the character limit. Conversation history is held in browser memory and cleared on refresh or when starting a new conversation.
 
-多轮对话按 `user`、`assistant` 交替排列，以 `user` 开始和结束。最多 21 条，每条最多 8000 字符，总计最多 24000 字符，请求体最多 64 KiB。示例前端每次最多携带最近 5 轮上下文，并按总长度进一步缩减。
+## Technology
 
-成功返回 HTTP 200：
+- Python and Flask for HTTP endpoints
+- Flask-CORS for browser cross-origin access
+- OpenAI Python SDK and Responses API for text generation
+- Gunicorn for serving the application on Render
+- HTML, CSS, and JavaScript for the separate frontend
 
-```json
-{"reply":"你好！有什么可以帮你？"}
-```
+Dependencies are listed in `requirements.txt`; the Python version is specified in `.python-version`.
 
-失败返回 `{"error":"可读的错误说明"}`：
+## Repository files
 
-| HTTP 状态码 | 含义 |
+| File | Purpose |
 | --- | --- |
-| 400 | 消息格式或长度不合要求 |
-| 401 | 访问口令不正确 |
-| 413 | 请求体太大 |
-| 429 | OpenAI 额度不足或请求频率受限 |
-| 502 | OpenAI 连接失败、调用失败或没有文字输出 |
-| 503 | 后端未配置密钥或口令 |
+| `app.py` | API routes, input validation, access control, CORS, and character instructions |
+| `requirements.txt` | Python dependencies |
+| `.python-version` | Python runtime version |
+| `.env.example` | Configuration examples containing placeholders only |
+| `.gitignore` | Excludes local secrets, virtual environments, and generated files |
+| `README.md` | Setup, API, and operation documentation |
+| `prompt.txt` | English record of user prompts from the initial development conversation; maintained separately from the runtime character instructions |
 
-前端等待时禁用发送按钮；成功后将 `reply` 作为纯文本显示并加入历史；失败显示 `error` 并保留输入。示例前端还设置了请求超时。
+## Configuration
 
-浏览器会先发送 `OPTIONS /api/chat` 跨域预检。Flask-CORS 自动为配置的来源处理预检，并允许 `Content-Type` 和 `X-Chat-Password` 请求头。未配置 `FRONTEND_ORIGINS` 时不允许跨域读取。CORS 不能替代口令验证，也不能阻止其他客户端直接调用接口。
+Set these environment variables on the backend:
 
-## 5. 身份验证、密钥和数据
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | OpenAI API key for a project with access to the selected model. Required for chat. |
+| `OPENAI_MODEL` | Model ID. The current deployment is configured to use `gpt-6-luna`. If omitted, the code falls back to `gpt-4.1-mini`; it does not automatically select an accessible model. |
+| `CHAT_PASSWORD` | Shared access password. Required for chat. Use a long, randomly generated value and share it privately. |
+| `FRONTEND_ORIGINS` | Comma-separated browser origins allowed to read chat responses. For the deployed frontend, use `https://trigger2283.github.io`. |
 
-- OpenAI 密钥只从后端环境变量读取，不写在 GitHub、HTML 或前端 JavaScript 中。
-- `CHAT_PASSWORD` 是学习项目的共享访问口令，由网页使用者输入，后端用常量时间比较验证。它不是 OpenAI 密钥，也不是完整用户账户系统。
-- 课程展示如需口令，请私下提供给评阅者，不要放进公开 README。
-- 后端没有数据库，不主动记录消息或口令。上下文由浏览器传入，刷新页面会清空示例前端的历史。
-- OpenAI 请求设置 `store=False`，但不等同于零数据保留承诺。
-- 当前版本用于个人学习或课程演示，没有按用户限流或总费用硬上限。API 调用会产生费用，请在 OpenAI 平台确认计费和用量。
+When entering values in Render, do not add surrounding quotation marks.
 
-## 6. 本地运行（可选）
+An origin includes the scheme, hostname, and a non-default port if applicable. It does not include a folder or filename. For `https://trigger2283.github.io/chatbot/`, the allowed origin is `https://trigger2283.github.io`.
 
-云端部署不要求先安装本地 Python。若需本地开发，安装 Python 3.13，在后端目录打开 PowerShell：
+`.env.example` is a reference only. The application does not automatically load `.env` files.
+
+## Deploy on Render
+
+Create a Web Service connected to the backend repository with these settings:
+
+| Setting | Value |
+| --- | --- |
+| Language | Python 3 |
+| Branch | `main` |
+| Root Directory | Leave blank when `app.py` is in the repository root |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 90` |
+| Health Check Path | `/health` |
+
+Add the environment variables, select an instance plan, and deploy. Once the service is live, check `/health` and test an actual conversation from the frontend. A successful health check confirms that the server is running; it does not validate the API key, model access, or available API quota.
+
+After changing backend files, commit and push them to the connected branch. If automatic deployment is enabled, Render builds the update. Otherwise, deploy the latest commit manually. Confirm the deployment succeeds before testing new behavior.
+
+## Run locally
+
+Install Python 3.13. In a PowerShell terminal opened in the backend repository:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-$env:OPENAI_API_KEY = '只在自己的电脑填写真实密钥'
-$env:OPENAI_MODEL = 'gpt-4.1-mini'
-$env:CHAT_PASSWORD = '自己设置的随机访问口令'
+$env:OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'
+$env:OPENAI_MODEL = 'gpt-6-luna'
+$env:CHAT_PASSWORD = 'YOUR_RANDOM_CHAT_PASSWORD'
 $env:FRONTEND_ORIGINS = 'http://localhost:8000'
 .\.venv\Scripts\python.exe app.py
 ```
 
-后端地址为 `http://127.0.0.1:5000`。`.env.example` 只是示例，程序不会自动读取 `.env`。不要分享含密钥的终端历史。
+The local backend runs at `http://127.0.0.1:5000`. Gunicorn is used on Render; the command above uses Flask's development server locally. Do not share terminal history containing credentials.
 
-本地前端：将前端 `config.js` 的后端地址临时改为 `http://127.0.0.1:5000`，在前端目录另开终端运行 `python -m http.server 8000`，浏览器访问 `http://localhost:8000`。发布前将 `config.js` 改回 Render HTTPS 地址。
+To test the frontend locally, temporarily set its `chatbot/config.js` backend URL to `http://127.0.0.1:5000`. From the frontend repository root, run `python -m http.server 8000`, then open `http://localhost:8000/chatbot/`. Restore the production backend URL before publishing.
 
-## 7. 部署后检查与排错
+Open the frontend through an HTTP server or GitHub Pages. Opening an HTML file directly with `file://` does not produce the configured browser origin.
 
-1. 打开后端 `/health`，确认服务运行。
-2. 打开 Pages 前端，用错误口令发送消息，确认出现口令错误提示。
-3. 换成正确口令发送「你好」，确认收到真实回复。这一步会调用 API。
-4. 发送「我上一句说了什么」，确认多轮对话连通。
+## API reference
 
-- 无法连接后端：核对 `config.js` 和 `FRONTEND_ORIGINS`，特别检查来源不含仓库路径。修改环境变量后等待 Render 重新部署。
-- Render 打开只有 JSON：正常，聊天页面在 GitHub Pages。
-- Render 部署失败：查看 Logs，检查文件是否位于仓库根目录、启动命令是否正确。
-- 首次请求慢：Render 免费服务闲置后会休眠，等待唤醒后重试。
-- 额度或模型错误：检查 OpenAI Billing、Usage、Limits、密钥有效性及模型访问权限。
-- 不要双击 HTML 用 `file://` 测试跨域；使用 Pages 或本地 HTTP 服务。
+### GET /
 
-## 8. 提示日志及官方参考
+Returns basic service information. No password is required.
 
-AI 辅助开发记录见 [prompt_log.md](prompt_log.md)。
+```json
+{"service":"AI Chat Backend","health":"/health","chat":"/api/chat"}
+```
 
-- OpenAI 入门：https://developers.openai.com/api/docs/quickstart
-- Render Flask 部署：https://render.com/docs/deploy-flask
-- Render 免费服务限制：https://render.com/docs/free
-- Flask-CORS：https://flask-cors.readthedocs.io/en/latest/api.html
-- GitHub Pages 发布：https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
+### GET /health
+
+Returns HTTP 200 with the service status and character-prompt version. No password is required, and no OpenAI request is made.
+
+```json
+{"status":"ok","prompt_version":"after-hours-v4"}
+```
+
+The version label identifies the prompt revision declared in `app.py` and can help confirm which revision is deployed.
+
+### POST /api/chat
+
+Request headers:
+
+```text
+Content-Type: application/json
+X-Chat-Password: YOUR_CHAT_PASSWORD
+```
+
+Request body:
+
+```json
+{
+  "messages": [
+    {"role": "user", "content": "What would you mix for me tonight?"}
+  ]
+}
+```
+
+For multiple turns, send alternating `user` and `assistant` messages, beginning and ending with `user`. Only these roles are accepted; character instructions are supplied separately by the backend.
+
+Request limits:
+
+- 1–21 messages
+- At most 8,000 characters per message, including whitespace
+- At most 24,000 characters across the trimmed message contents
+- At most 64 KiB for the complete request body
+
+Each message must contain a string with at least one non-whitespace character. The 8,000-character limit is applied before trimming, including any whitespace.
+
+Successful response, HTTP 200:
+
+```json
+{"reply":"Something crisp or something cozy?"}
+```
+
+Handled failures return an `error` field with a readable explanation. Backend explanations are currently in Chinese; the frontend maps HTTP status codes to English interface messages.
+
+| HTTP status | Meaning |
+| --- | --- |
+| 400 | Invalid message structure or content length |
+| 401 | Incorrect or missing chat password |
+| 413 | Request body too large |
+| 429 | OpenAI request limit or quota issue |
+| 502 | OpenAI connection or API failure, or no text reply |
+| 503 | Missing server-side API key or chat password |
+
+### OPTIONS /api/chat
+
+Flask and Flask-CORS handle browser preflight requests. Configured origins may use `POST` with the `Content-Type` and `X-Chat-Password` headers. No cross-origin browser access is allowed when `FRONTEND_ORIGINS` is empty.
+
+## Character behavior
+
+`BOT_INSTRUCTIONS` in `app.py` defines the After Hours host. It is sent with every chat request, independently of conversation history.
+
+The host defaults to English, follows the language of the current user request, and maintains a relaxed bar-owner voice. It can explain recipes and techniques or engage in casual conversation. It has no live weather, browsing, reservations, or ordering tools. Its bar persona is fictional.
+
+To change the character, edit `BOT_INSTRUCTIONS`, update `PROMPT_VERSION`, and deploy the backend. Start a new conversation to evaluate the revised prompt without earlier replies influencing the result. Model responses are variable; instructions guide behavior but do not guarantee identical phrasing or perfect consistency.
+
+## Security and data handling
+
+- Keep the OpenAI API key in backend environment variables. Never put it in frontend code, a public repository, screenshots, or the development prompt record.
+- `CHAT_PASSWORD` provides shared-password access control, not individual user accounts. The backend verifies it before requesting an OpenAI response.
+- CORS controls what browser origins can read responses. It does not stop direct requests from other clients and is not a substitute for authentication.
+- The application has no per-user rate limiting, password-attempt limit, or application-level spending cap. Anyone with the chat password can make requests that consume API usage.
+- The backend has no database and does not intentionally log message contents or passwords. Messages are sent to OpenAI for processing. `store=False` is set, but this is not a zero-data-retention guarantee.
+- `.gitignore` helps prevent accidental Git tracking of local secret files. It does not remove already committed credentials, and manually uploading files on GitHub requires checking the selected files yourself.
+- If a key is exposed, revoke it and replace the Render environment variable with a new key. Deleting the visible file alone does not invalidate the leaked key.
+
+## Verification and troubleshooting
+
+1. Open `/health` and confirm the expected `prompt_version`.
+2. Test an incorrect chat password and confirm the frontend shows an access error.
+3. Send a short message with the correct password to verify the complete API flow. This consumes API usage.
+4. Send a follow-up to check conversation context and language continuity.
+
+| Symptom | What to check |
+| --- | --- |
+| Old frontend appearance | Confirm the latest GitHub Pages deployment completed, then hard-refresh or use a fresh browser session. |
+| Old character behavior | Confirm the latest Render deployment and `/health` version, then start a new conversation. |
+| Cannot reach the backend | Check the frontend backend URL, network access, and `FRONTEND_ORIGINS`. Use the hosted webpage rather than a local HTML file. |
+| First request is slow | A free Render instance may need to wake after being idle. |
+| API or quota error | Check the configured model, project permissions, key validity, and OpenAI usage or billing status. |
+| Deployment failed | Review Render logs, dependency installation, repository root, and the start command. |
+| Backend root shows JSON | Expected: the chat interface is hosted separately on GitHub Pages. |
+
+## Development record
+
+The English user-prompt record is maintained in `prompt.txt`. It documents an earlier portion of development and is not automatically updated with subsequent changes. Runtime character instructions are maintained separately in `app.py`.
+
+## References
+
+- [OpenAI API quickstart](https://developers.openai.com/api/docs/quickstart)
+- [Deploy Flask on Render](https://render.com/docs/deploy-flask)
+- [Render free instances](https://render.com/docs/free)
+- [Flask-CORS documentation](https://flask-cors.readthedocs.io/en/latest/api.html)
+- [GitHub Pages publishing configuration](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)

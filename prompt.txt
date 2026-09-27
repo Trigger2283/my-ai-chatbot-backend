@@ -1,0 +1,98 @@
+I want to make an AIbot chat program and build my backend on render.com. This bot will use ChatGPT's API. Can you help me build it step by step and tell me what to do? I have no idea where to start, and I also know nothing about programming in this area.
+
+I currently have all of these accounts.
+
+But I think I want my frontend and backend code to be deployed in different repositories. Is that possible?
+
+Sorry, did you just ask me for the addresses of my frontend and backend repositories? I didn't see it. I currently have a frontend repository, which is my previous portfolio GitHub website. I don't know whether storing the frontend code there is a good choice. As for the backend, I haven't created a new repository yet. What should I do?
+
+[https://github.com/Trigger2283/Trigger2283.github.io](https://github.com/Trigger2283/Trigger2283.github.io)
+This is my portfolio GitHub website.
+
+Like this?
+
+Don't I need to add a gitignore to keep my API key separate and hidden?
+
+[https://github.com/Trigger2283/my-ai-chatbot-backend](https://github.com/Trigger2283/my-ai-chatbot-backend)
+I've created it. Here's the link.
+
+Got it. Before doing this, I want to confirm one more thing. I noticed that you also have a requirment file. I may not have installed the things in it yet. Will you walk through them with me when the time comes?
+
+prompt、
+
+Should the prompt file be uploaded last? I need to upload the complete prompt record.
+
+Okay, let's finish the other things first and handle the prompt last. I'll tell you how to do it then. I'll upload these files to my frontend repository first.
+
+These, right?
+
+Okay, so in the future, if I need to update this bot's interface or things like that, will I also do it by overwriting the old files? If so, I'll use the current folder (houduan) as our temporary file transfer station. You'll put the updated files here and tell me which repository to put them in, and I'll be responsible for transferring them from this folder. Are we in agreement on this?
+
+Okay, back to the files. My backend files have been uploaded.
+
+I can also just copy the information in here to let it know which repository it is, right?
+
+Do I need to connect all repositories?
+
+I've finished configuring it. I'll send you a screenshot. Please take a look and see whether this is correct.
+
+`OPENAI_MODEL` Why is it 4.1?
+
+Then how do I check which model my API key corresponds to? Or does the model have nothing to do with my API key, or is it not bound to it?
+
+Is this okay?
+
+Okay, I've filled in the key's name and key-value. Can I just deploy next?
+
+I don't see where I can configure `CHAT_PASSWORD` and `FRONTEND_ORIGINS`.
+
+What happens if I don't configure these three variables?
+
+Don't do it yet, but I want to ask: can I change the password requirement to password-free access?
+
+Doesn't `FRONTEND_ORIGINS` need to specify the exact folder?
+
+Okay, the password can be purely numeric, right?
+
+I won't configure the model manually for now, because the only model I can currently use is gpt6 luna, and I can't use any of the others. So, just in case, I'll let it choose for itself for now. Is that workable?
+
+I mean permissions on the platform. My other models are all grayed out.
+
+I've configured all of these. What do I do next?
+
+[https://my-ai-chatbot-backend-gevf.onrender.com/](https://my-ai-chatbot-backend-gevf.onrender.com/)
+It worked. Here's the URL.
+
+My status is now OK, and I'm trying to check the cross-origin configuration again. Where can I review this configuration?
+
+I see. I was previously opening it by double-clicking on my computer. Now that I copy the URL into the browser, I can communicate normally. Why is that?
+
+OK, next, if I want to give this AI a character identity, how should I do that?
+
+Let it be a bar owner who can cook, who shows extensive knowledge of mixology and cooking while chatting. I'd like it to be a bit witty and humorous.
+
+Can you change the prompt to English?
+
+Then I'd like to change the webpage interface to English as well, and make its overall mood feel more like a bar or restaurant, preferably at night.
+
+It hasn't updated.
+
+It has that line. Please check whether the appearance of my chatbot website has changed.
+
+It works in an incognito window. Why is that, and how do I clear the cache?
+
+Is my API at risk of exposure?
+
+Is my API at risk of exposure?
+
+Now this bot sometimes gives me replies in Chinese even when I ask in English, and sometimes its replies depart from its assigned identity. Can you improve this?
+
+Replies like this still feel very stiff. What can we do?
+
+Can you confirm that it has been updated? This still looks very stiff.
+
+I've replaced it, but I still don't see the newly added version confirmation information.
+
+Okay, can I confirm the URL for opening my chatbot again now?
+
+I'd now like to change the questions in these three prompts on the left. Right now, they seem more like a user asking an AI what they need to do if they want to do something, but I'd prefer to change them into a conversation between a customer and a bartender. For example, with the current question, rather than using words like “help me” and “What ingredients should I use?”, I'd prefer to ask the bartender from a customer's perspective: I want a snack I can eat within 15 minutes. What can you make for me? How do you make it? Examples like that.
